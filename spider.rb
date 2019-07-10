@@ -3,7 +3,14 @@ require 'csv'
 
 EMAIL_RE = /[\w.!#\$%+-]+@[\w-]+(?:\.[\w-]+)+/
 PHONE_RE = /[\s|>]\d{3}[-. ]\d{3}[-. ]\d{4}[\s|<]/
-CONTACT_PAGES = ["contact-us","contact_us","contactus","contact"]
+CONTACT_PAGES = ["contact-us","contact_us","contactus","contact"].freeze
+IGNORE_IF_CONTAINS = ["animate.css","bootstrap","calendar.google",
+					  "sentry.wixpress","jquery","core-js","requirejs-bolt",
+					  "\#@id","membership","webmaster","admin","events",
+					  ".png",".jpeg",".jpg"].freeze
+IGNORE_EMAILS = ["name@email.com","example@email.com","your@email.com",
+				 "you@someemail.com","info@myemail.com","email@email.com",
+				 "youremail@domain.com","email@domain.com"].freeze
 
 class Spider
 	def initialize url
@@ -38,6 +45,7 @@ class Spider
 	end
 	def find_emails_in page
 		page.to_s.scan EMAIL_RE do |email|
+			next if should_ignore email
 			email = email.gsub /<|>|\s/, ""
 			email = email.downcase
 			email.strip!
@@ -48,6 +56,16 @@ class Spider
 	def found_contact_page link
 		CONTACT_PAGES.each do |site|
 			return true if link =~ /#{site}$/
+		end
+		false
+	end
+
+	def should_ignore email
+		IGNORE_IF_CONTAINS.each do |word|
+			return true if email =~ /#{word}/
+		end
+		IGNORE_EMAILS.each do |fake_email|
+			return true if email == fake_email
 		end
 		false
 	end
